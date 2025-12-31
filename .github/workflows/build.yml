@@ -1,0 +1,42 @@
+name: Build & Release DRJNS_Jackhammer (Windows)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: cmake -S . -B build -A x64
+
+    - name: Build Release
+      run: cmake --build build --config Release
+
+    - name: Prepare package
+      run: |
+        mkdir package
+        copy build\Release\DRJNS_Jackhammer.exe package\
+        copy config.json package\
+        copy README.md package\
+        copy LICENSE package\
+
+    - name: Create ZIP
+      run: |
+        powershell Compress-Archive `
+          -Path package\* `
+          -DestinationPath DRJNS_Jackhammer_${{ github.ref_name }}_Windows.zip
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: DRJNS_Jackhammer_${{ github.ref_name }}_Windows.zip
+
+permissions:
+  contents: write
